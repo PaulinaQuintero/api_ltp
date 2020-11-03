@@ -6,8 +6,9 @@ import logging
 import time
 import hashlib
 from base64 import b64encode
+import json
 
-class LinkToPaySerializer(serializers.ModelSerializer):
+class LinkToPaySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = LinkToPayRequest
         fields = '__all__'
@@ -19,17 +20,22 @@ class LinkToPaySerializer(serializers.ModelSerializer):
         unix_timestamp = str(int(time.time()))
         uniq_token_string = server_app_key + unix_timestamp
         uniq_token_hash = hashlib.sha256(uniq_token_string.encode('utf-8')).hexdigest()
-        auth_token = b64encode('%s;%s;%s' % (server_application_code, unix_timestamp, uniq_token_hash))
+        auth_token = (b64encode('%s;%s;%s' % (server_application_code, unix_timestamp, uniq_token_hash))).decode('utf-8')
+        headers = {'content-type': 'application/json',
+                   'auth-token': 'auth-token {}'.format(auth_token)}
 
 
         try:
-            response = requests.post("https://noccapi-stg.paymentez.com/linktopay/init_order/", json= payload, headers={'Authorization': 'Token {}'.format(auth_token)})
+            response = requests.post("https://noccapi-stg.paymentez.com/linktopay/init_order/", json= payload, headers= headers)
 
         except requests.exceptions.RequestException:
             logging.error('Error')
 
         response_json = response.json()
         data["supplier_reference"] = response_json["status"]
+        instance = super().create(data)
+
+        return instance
 
     @staticmethod
     def _prepare_supplier_payload(data):
