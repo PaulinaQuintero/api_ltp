@@ -6,7 +6,7 @@ from rest_framework.viewsets import GenericViewSet
 from  .models import LinkToPayRequest
 from .serializers import LinkToPaySerializer
 # Create your views here.
-class LinkToPayViewSet(CreateModelMixin, GenericViewSet):
+class LinkToPayViewSet(viewsets.ModelViewSet):
     queryset = LinkToPayRequest.objects.all()
     serializer_class = LinkToPaySerializer
 

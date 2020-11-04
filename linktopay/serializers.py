@@ -1,56 +1,64 @@
-
-from django.contrib.sites import requests
+import requests
 from rest_framework import serializers
 from .models import LinkToPayRequest
 import logging
 import time
 import hashlib
 from base64 import b64encode
-import json
 
-class LinkToPaySerializer(serializers.HyperlinkedModelSerializer):
+class LinkToPaySerializer(serializers.ModelSerializer):
+    id=serializers.CharField(max_length=100)
+    dev_reference=serializers.CharField(max_length=100)
+    amount=serializers.DecimalField(decimal_places=2, max_digits=20)
     class Meta:
         model = LinkToPayRequest
-        fields = '__all__'
+        fields = ('id', 'dev_reference', 'amount')
 
-    def create(self, data):
-        payload = self._prepare_supplier_payload(data)
+    def create(self, validated_data):
+        print(validated_data)
+        payload = self._prepare_supplier_payload(validated_data)
         server_application_code = 'PAU-MXN-SERVER'
         server_app_key = 'IdHK1C988Hd6iZUtMPEWvqP3C5KuDq'
+
         unix_timestamp = str(int(time.time()))
         uniq_token_string = server_app_key + unix_timestamp
-        uniq_token_hash = hashlib.sha256(uniq_token_string.encode('utf-8')).hexdigest()
-        auth_token = (b64encode('%s;%s;%s' % (server_application_code, unix_timestamp, uniq_token_hash))).decode('utf-8')
+        uniq_token_hash = hashlib.sha256(uniq_token_string.encode()).hexdigest()
+        msg = '%s;%s;%s' % (server_application_code, unix_timestamp, uniq_token_hash)
+        auth_token = b64encode(msg.encode())
         headers = {'content-type': 'application/json',
                    'auth-token': 'auth-token {}'.format(auth_token)}
 
 
         try:
             response = requests.post("https://noccapi-stg.paymentez.com/linktopay/init_order/", json= payload, headers= headers)
+            logging.info(response)
+            response_json = response.json()
+            logging.info(response_json)
+            validated_data["supplier_reference"] = response_json["status"]
+            instance = super().create(validated_data)
+            return instance
 
-        except requests.exceptions.RequestException:
-            logging.error('Error')
+        except Exception as e:
+            logging.error(e)
+            instance = super().create(validated_data)
+            return instance
 
-        response_json = response.json()
-        data["supplier_reference"] = response_json["status"]
-        instance = super().create(data)
 
-        return instance
 
     @staticmethod
-    def _prepare_supplier_payload(data):
+    def _prepare_supplier_payload(validated_data):
         partial_payment = bool(1)
         return {
             "user": {
-                "id": data["id"],
+                "id": validated_data["id"],
                 "email": "ejemplo@email.com",
                 "name": "Señor",
                 "last_name": "Prueba"
             },
             "order": {
-                "dev_reference": data["dev_reference"],
+                "dev_reference": validated_data["dev_reference"],
                 "description": "Product description",
-                "amount": data["amount"],
+                "amount": validated_data["amount"],
                 "installments_type": 0,
                 "currency": "MXN"
             },
