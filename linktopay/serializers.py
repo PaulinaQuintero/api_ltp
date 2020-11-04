@@ -27,7 +27,8 @@ class LinkToPaySerializer(serializers.ModelSerializer):
         msg = '%s;%s;%s' % (server_application_code, unix_timestamp, uniq_token_hash)
         auth_token = b64encode(msg.encode())
         headers = {'content-type': 'application/json',
-                   'auth-token': 'auth-token {}'.format(auth_token)}
+                   'Auth-Token': 'auth-token {}'.format(auth_token.decode('utf-8'))}
+        print(auth_token.decode('utf-8'))
 
 
         try:
@@ -35,7 +36,7 @@ class LinkToPaySerializer(serializers.ModelSerializer):
             logging.info(response)
             response_json = response.json()
             logging.info(response_json)
-            print(response_json["payment_url"])
+            print(response_json)
 
 
         except Exception as e:
