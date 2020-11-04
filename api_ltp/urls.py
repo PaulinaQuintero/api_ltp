@@ -1,13 +1,11 @@
-from django.contrib import admin
+
+from linktopay.views import LinkToPayView
 from django.urls import path
-from rest_framework.routers import DefaultRouter
-from linktopay.views import LinkToPayViewSet
 
-router = DefaultRouter()
-router.register(r'linktopay', LinkToPayViewSet)
 
-urlpatterns = router.urls
+app_name = "articles"
 
-urlpatterns += [
-    path('admin/', admin.site.urls),
+# app_name will help us do a reverse look-up latter.
+urlpatterns = [
+    path('ordertopay/', LinkToPayView.as_view()),
 ]
