@@ -6,10 +6,11 @@ import time
 import hashlib
 from base64 import b64encode
 
+
 class LinkToPaySerializer(serializers.ModelSerializer):
     id=serializers.CharField(max_length=100)
     dev_reference=serializers.CharField(max_length=100)
-    amount=serializers.DecimalField(decimal_places=2, max_digits=20)
+    amount=serializers.FloatField()
     class Meta:
         model = LinkToPayRequest
         fields = ('id', 'dev_reference', 'amount')
@@ -34,11 +35,12 @@ class LinkToPaySerializer(serializers.ModelSerializer):
             logging.info(response)
             response_json = response.json()
             logging.info(response_json)
-            validated_data["supplier_reference"] = response_json["status"]
+            print(validated_data["id"])
             instance = super().create(validated_data)
             return instance
 
         except Exception as e:
+            #print(validated_data["id"])
             logging.error(e)
             instance = super().create(validated_data)
             return instance
@@ -48,6 +50,7 @@ class LinkToPaySerializer(serializers.ModelSerializer):
     @staticmethod
     def _prepare_supplier_payload(validated_data):
         partial_payment = bool(1)
+        print(partial_payment)
         return {
             "user": {
                 "id": validated_data["id"],
