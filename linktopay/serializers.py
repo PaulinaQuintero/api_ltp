@@ -35,15 +35,14 @@ class LinkToPaySerializer(serializers.ModelSerializer):
             logging.info(response)
             response_json = response.json()
             logging.info(response_json)
-            print(validated_data["id"])
-            instance = super().create(validated_data)
-            return instance
+            print(response_json["payment_url"])
+
 
         except Exception as e:
-            #print(validated_data["id"])
             logging.error(e)
-            instance = super().create(validated_data)
-            return instance
+
+        instance = super().create(validated_data)
+        return instance
 
 
 

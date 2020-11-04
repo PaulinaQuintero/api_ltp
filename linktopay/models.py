@@ -8,7 +8,7 @@ class LinkToPayRequest(models.Model):
     amount = models.FloatField()
 
     def __str__(self):
-        return self.name + ' ' + self.last_name
+        return "{} {}".format(self.name,self.last_name)
 
     @property
     def playlist_id(self):
